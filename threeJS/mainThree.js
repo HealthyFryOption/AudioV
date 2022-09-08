@@ -35,18 +35,6 @@ renderer.setSize(innerWidth, innerHeight);
 // ----- WebXR Initialization -----
 document.body.appendChild(VRButton.createButton(renderer));
 renderer.xr.enabled = true;
-
-let control1 = renderer.xr.getController(0);
-let gripSpace1 = renderer.xr.getControllerGrip(0);
-
-let modelController1 = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-);
-modelController1.position.set(0, 0, 2, 0);
-gripSpace1.add(modelController1);
-scene.add(gripSpace1);
-
 // ----- WebXR Initialization -----
 
 // ----- Orbit Set -----
@@ -54,6 +42,12 @@ let orbit = new OrbitControls(camera, renderer.domElement);
 orbit.maxDistance = 20;
 orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
+
+// ------
+// Store the position of the VR HMD in a dummy camera.
+var fakeCamera = new THREE.Object3D();
+var vrControls = new THREE.VRControls(fakeCamera);
+// ------
 
 // ----- Audio Set -----
 const listener = new THREE.AudioListener();
@@ -169,5 +163,18 @@ renderer.setAnimationLoop(function () {
   gltfModels["bookModel"].rotation.y += 0.01;
   gltfModels["bookModel"].rotation.z += 0.01;
 
+  orbit.update();
+  vrControls.update();
+
+  // Apply the VR HMD camera position and rotation
+  // on top of the orbited camera.
+  var rotatedPosition = fakeCamera.position.applyQuaternion(camera.quaternion);
+  camera.position.add(rotatedPosition);
+  camera.quaternion.multiply(fakeCamera.quaternion);
+
   renderer.render(scene, camera);
+
+  // Restore the orbit position, so that the OrbitControls can
+  // pickup where it left off.
+  camera.position.copy(orbitPos);
 });
