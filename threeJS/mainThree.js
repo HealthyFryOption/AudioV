@@ -5,6 +5,8 @@
 // ----- Core Imports -----
 import * as THREE from "three";
 import { OrbitControls } from "OrbitControls";
+
+import { XRControllerModelFactory } from "./webxr/XRControllerModelFactory.js";
 import { VRButton } from "./webxr/VRButton.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.138.3/examples/jsm/loaders/GLTFLoader.js";
 const GSAP = gsap;
@@ -38,9 +40,9 @@ renderer.xr.enabled = true;
 // ----- WebXR Initialization -----
 
 // ----- Orbit Set -----
-let orbit = new OrbitControls(camera, renderer.domElement);
-orbit.maxDistance = 20;
-orbit.maxZoom = 0.523599; // 30 degrees
+// let orbit = new OrbitControls(camera, renderer.domElement);
+// orbit.maxDistance = 20;
+// orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
 // ------
@@ -160,13 +162,24 @@ camera.position.y = 1.6;
 let camPositionZ = 0;
 console.log("4");
 
+// Controllers
+const controllerGrip1 = renderer.xr.getControllerGrip(0);
+
+let controllerModelFactory = new XRControllerModelFactory();
+const model1 = controllerModelFactory.createControllerModel(controllerGrip1);
+
+controllerGrip1.add(model1);
+console.log(controllerGrip1);
+
+scene.add(controllerGrip1);
+
 renderer.setAnimationLoop(function () {
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
   gltfModels["bookModel"].rotation.z += 0.01;
 
-  user.position.setZ(Math.sin(camPositionZ) * 5);
-  camPositionZ += 0.01;
+  // user.position.setZ(Math.sin(camPositionZ) * 5);
+  // camPositionZ += 0.003;
 
   renderer.render(scene, camera);
 });
