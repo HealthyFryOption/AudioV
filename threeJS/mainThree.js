@@ -160,7 +160,7 @@ camera.position.y = 1.6;
 // Camera adjustments
 
 let camPositionZ = 0;
-console.log("4");
+console.log("5");
 
 // Controllers
 const controllerGrip1 = renderer.xr.getControllerGrip(0);
