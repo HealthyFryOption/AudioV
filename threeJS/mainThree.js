@@ -40,9 +40,9 @@ renderer.xr.enabled = true;
 // ----- WebXR Initialization -----
 
 // ----- Orbit Set -----
-// let orbit = new OrbitControls(camera, renderer.domElement);
-// orbit.maxDistance = 20;
-// orbit.maxZoom = 0.523599; // 30 degrees
+let orbit = new OrbitControls(camera, renderer.domElement);
+orbit.maxDistance = 20;
+orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
 // ------
@@ -104,7 +104,7 @@ window.addEventListener("resize", () => {
 
 // ============= Scene Objects & Manipulations =============
 
-let pLight1 = new THREE.PointLight(0xffffff, 1, 1000);
+let pLight1 = new THREE.PointLight(0xffffff, 3, 1000);
 let pLight2 = new THREE.PointLight(0xffffff, 1.5, 1000);
 pLight1.position.set(0, 0, 0);
 pLight2.position.set(0, 0, 25);
@@ -160,18 +160,26 @@ camera.position.y = 1.6;
 // Camera adjustments
 
 let camPositionZ = 0;
-console.log("5");
+console.log("6");
 
 // Controllers
-const controllerGrip1 = renderer.xr.getControllerGrip(0);
-
 let controllerModelFactory = new XRControllerModelFactory();
+
+const controllerGrip1 = renderer.xr.getControllerGrip(0);
 const model1 = controllerModelFactory.createControllerModel(controllerGrip1);
 
 controllerGrip1.add(model1);
 console.log(controllerGrip1);
 
 scene.add(controllerGrip1);
+
+const controllerGrip2 = renderer.xr.getControllerGrip(1);
+const model2 = controllerModelFactory.createControllerModel(controllerGrip2);
+
+controllerGrip2.add(model2);
+console.log(controllerGrip2);
+
+scene.add(controllerGrip2);
 
 renderer.setAnimationLoop(function () {
   gltfModels["bookModel"].rotation.z += 0.01;
