@@ -35,6 +35,18 @@ renderer.setSize(innerWidth, innerHeight);
 // ----- WebXR Initialization -----
 document.body.appendChild(VRButton.createButton(renderer));
 renderer.xr.enabled = true;
+
+let control1 = renderer.xr.getController(0);
+let gripSpace1 = renderer.xr.getControllerGrip(0);
+
+let modelController1 = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+);
+modelController1.position.set(0, 0, 2, 0);
+gripSpace1.add(modelController1);
+scene.add(gripSpace1);
+
 // ----- WebXR Initialization -----
 
 // ----- Orbit Set -----
