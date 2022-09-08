@@ -44,9 +44,10 @@ orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
 // ------
-// Store the position of the VR HMD in a dummy camera.
-var fakeCamera = new THREE.Object3D();
-var vrControls = new THREE.VRControls(fakeCamera);
+let user = new THREE.Group();
+user.position.set(0, 0, 0);
+user.add(camera);
+scene.add(user);
 // ------
 
 // ----- Audio Set -----
@@ -141,7 +142,6 @@ const curve = new THREE.SplineCurve([
 ]);
 
 const points = curve.getPoints(100);
-console.log(points);
 const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
 const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
@@ -149,32 +149,24 @@ const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
 // Create the final object to add to the scene
 const splineObject = new THREE.Line(geometry, material);
 
-console.log(splineObject);
 scene.add(splineObject);
 
 // ============= Scene Objects & Manipulations =============
 
 // Camera adjustments
-camera.position.z = 5;
+camera.position.y = 1.6;
 // Camera adjustments
+
+let camPositionZ = 0;
+console.log("4");
 
 renderer.setAnimationLoop(function () {
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
   gltfModels["bookModel"].rotation.z += 0.01;
 
-  orbit.update();
-  vrControls.update();
-
-  // Apply the VR HMD camera position and rotation
-  // on top of the orbited camera.
-  var rotatedPosition = fakeCamera.position.applyQuaternion(camera.quaternion);
-  camera.position.add(rotatedPosition);
-  camera.quaternion.multiply(fakeCamera.quaternion);
+  user.position.setZ(Math.sin(camPositionZ) * 5);
+  camPositionZ += 0.01;
 
   renderer.render(scene, camera);
-
-  // Restore the orbit position, so that the OrbitControls can
-  // pickup where it left off.
-  camera.position.copy(orbitPos);
 });
