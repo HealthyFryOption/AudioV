@@ -160,26 +160,43 @@ camera.position.y = 1.6;
 // Camera adjustments
 
 let camPositionZ = 0;
-console.log("6");
+console.log("7");
 
-// Controllers
+// ============= Controllers =============
 let controllerModelFactory = new XRControllerModelFactory();
 
+// ----- Controller 1 -----
 const controllerGrip1 = renderer.xr.getControllerGrip(0);
+
+controllerGrip1.addEventListener("selectstart", (e) => {
+  console.log("selected start");
+  sound.play();
+});
+
 const model1 = controllerModelFactory.createControllerModel(controllerGrip1);
 
 controllerGrip1.add(model1);
 console.log(controllerGrip1);
 
 scene.add(controllerGrip1);
+// ----- Controller 1 -----
 
+// ----- Controller 2 -----
 const controllerGrip2 = renderer.xr.getControllerGrip(1);
+
+controllerGrip2.addEventListener("selectstart", (e) => {
+  console.log("selected start");
+  sound.play();
+});
+
 const model2 = controllerModelFactory.createControllerModel(controllerGrip2);
 
 controllerGrip2.add(model2);
 console.log(controllerGrip2);
+// ----- Controller 2 -----
 
 scene.add(controllerGrip2);
+// ============= Controllers =============
 
 renderer.setAnimationLoop(function () {
   gltfModels["bookModel"].rotation.z += 0.01;
