@@ -76,10 +76,6 @@ function modelLoader(url) {
 // ============= Events =============
 
 // ----- Audio Events -----
-let button = document.getElementById("play");
-button.addEventListener("click", () => {
-  sound.play();
-});
 
 // load a sound and set it as the Audio object's buffer
 const audioLoader = new THREE.AudioLoader();
@@ -116,24 +112,6 @@ let grid = new THREE.GridHelper(100, 100, "#168270", "#2c1682");
 grid.frustrumCulled = false;
 scene.add(grid);
 
-// ===== GLTFs =====
-
-// ----- Book Model -----
-gltfModels["bookModel"] = (await modelLoader("./models/scene.gltf")).scene;
-
-let scaleValue = 0.05;
-gltfModels["bookModel"].scale.set(scaleValue, scaleValue, scaleValue);
-gltfModels["bookModel"].receiveShadow = true;
-gltfModels["bookModel"].position.set(0, 3, 0);
-gltfModels["bookModel"].rotation.x = Math.PI / 2;
-gltfModels["bookModel"].rotation.z = 44;
-gltfModels["bookModel"].rotation.y = 50;
-
-scene.add(gltfModels["bookModel"]);
-// ----- Book Model -----
-
-// ===== GLTFs =====
-
 // Create a sine-like wave
 const curve = new THREE.SplineCurve([
   new THREE.Vector2(-20, 0),
@@ -146,10 +124,11 @@ const curve = new THREE.SplineCurve([
 const points = curve.getPoints(100);
 const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
-const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-
 // Create the final object to add to the scene
-const splineObject = new THREE.Line(geometry, material);
+const splineObject = new THREE.Line(
+  geometry,
+  new THREE.LineBasicMaterial({ color: 0xff0000 })
+);
 
 scene.add(splineObject);
 
@@ -158,53 +137,164 @@ scene.add(splineObject);
 // Camera adjustments
 camera.position.y = 1.6;
 // Camera adjustments
-
 let camPositionZ = 0;
-console.log("7");
 
 // ============= Controllers =============
-let controllerModelFactory = new XRControllerModelFactory();
+let controllerGestures = [];
+let controllerReach = 2;
 
-// ----- Controller 1 -----
-const controllerGrip1 = renderer.xr.getControllerGrip(0);
-
-controllerGrip1.addEventListener("selectstart", (e) => {
+function onSelectStart() {
   console.log("selected start");
-  sound.play();
-});
+  // sound.play();
+  this.children[0].scale.z = controllerReach;
+  this.userData.selectPressed = true;
+}
 
-const model1 = controllerModelFactory.createControllerModel(controllerGrip1);
+function onSelectEnd() {
+  console.log("selected stop");
+  this.children[0].scale.z = 0;
+  this.userData.selectPressed = false;
+}
 
-controllerGrip1.add(model1);
-console.log(controllerGrip1);
+function createControllers() {
+  let controllerModelFactory = new XRControllerModelFactory();
 
-scene.add(controllerGrip1);
-// ----- Controller 1 -----
+  let controlGestureLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -1),
+    ]),
+    new THREE.LineBasicMaterial({
+      color: 0x0000ff,
+    })
+  );
+  controlGestureLine.scale.z = 0;
 
-// ----- Controller 2 -----
-const controllerGrip2 = renderer.xr.getControllerGrip(1);
+  for (let i = 0; i < 2; ++i) {
+    let controlGesture = renderer.xr.getController(i);
+    controlGesture.add(controlGestureLine.clone());
 
-controllerGrip2.addEventListener("selectstart", (e) => {
-  console.log("selected start");
-  sound.play();
-});
+    controlGesture.userData.selectPressed = false; // When select button is pressed
+    controlGesture.userData.selectPressedPrev = false; // When select button is previously pressed one frame back
 
-const model2 = controllerModelFactory.createControllerModel(controllerGrip2);
+    user.add(controlGesture);
+    scene.add(controlGesture);
+    controllerGestures.push(controlGesture);
 
-controllerGrip2.add(model2);
-console.log(controllerGrip2);
-// ----- Controller 2 -----
+    let controllerGrip = renderer.xr.getControllerGrip(i);
+    controllerGrip.add(
+      controllerModelFactory.createControllerModel(controllerGrip)
+    );
+    user.add(controllerGrip);
+    scene.add(controllerGrip);
+  }
 
-scene.add(controllerGrip2);
+  controllerGestures.forEach((controllerGesture) => {
+    controllerGesture.addEventListener("selectstart", onSelectStart);
+    controllerGesture.addEventListener("selectend", onSelectEnd);
+  });
+}
+
 // ============= Controllers =============
 
+// ============= Interactable Objects =============
+let interactableObjects = [];
+let chosenInteractableObject = []; // 0 => Object | 1 => ObjectOriginalPosition
+
+let cube = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+);
+cube.position.set(0, 1.5, -5.8);
+cube.isGLTF = false;
+interactableObjects.push(cube);
+
+// ===== GLTFs =====
+
+// ----- Book Model -----
+gltfModels["bookModel"] = (await modelLoader("./models/scene.gltf")).scene;
+
+let scaleValue = 0.01;
+gltfModels["bookModel"].scale.set(scaleValue, scaleValue, scaleValue);
+gltfModels["bookModel"].receiveShadow = true;
+gltfModels["bookModel"].position.set(0, 1, 0);
+gltfModels["bookModel"].rotation.x = Math.PI / 2;
+gltfModels["bookModel"].rotation.z = 44;
+gltfModels["bookModel"].rotation.y = 50;
+gltfModels["bookModel"].isGLTF = true;
+
+interactableObjects.push(gltfModels["bookModel"]);
+// ----- Book Model -----
+
+// ===== GLTFs =====
+
+// Add all interactable objects into scene
+interactableObjects.forEach((obj) => {
+  scene.add(obj);
+});
+
+// ============= Interactable Objects =============
+
+function gestureHandling(controllerGesture) {
+  if (controllerGesture.userData.selectPressed) {
+    if (!chosenInteractableObject.length > 0) {
+      // First time intersect when select is pressed
+
+      controllerGesture.children[0].scale.z = controllerReach;
+      const rotationMatrix = new THREE.Matrix4();
+      rotationMatrix.extractRotation(controllerGesture.matrixWorld);
+      const raycaster = new THREE.Raycaster();
+      raycaster.ray.origin.setFromMatrixPosition(controllerGesture.matrixWorld);
+      raycaster.ray.direction.set(0, 0, -1).applyMatrix4(rotationMatrix);
+
+      const intersects = raycaster.intersectObjects(interactableObjects);
+
+      if (intersects.length > 0) {
+        if (intersects[0].distance <= controllerReach) {
+          controllerGesture.children[0].scale.z = intersects[0].distance;
+
+          chosenInteractableObject.push(intersects[0].object);
+          chosenInteractableObject.push(
+            intersects[0].object.position.distanceTo(controllerGesture.position)
+          );
+          console.log(intersects[0].object);
+        }
+      }
+    } else {
+      // Move selected object so it's always the same distance from controller
+      const moveVector = controllerGesture
+        .getWorldDirection(new THREE.Vector3())
+        .multiplyScalar(chosenInteractableObject[1])
+        .negate();
+      chosenInteractableObject[0].position.copy(
+        controllerGesture.position.clone().add(moveVector)
+      );
+    }
+  } else if (controllerGesture.userData.selectPressedPrev) {
+    // Select released
+    if (chosenInteractableObject.length > 0) {
+      chosenInteractableObject.length = 0;
+    }
+  }
+  controllerGesture.userData.selectPressedPrev =
+    controllerGesture.userData.selectPressed;
+}
+
+// ============= Run =============
+createControllers();
+
+console.log("Ver 7");
 renderer.setAnimationLoop(function () {
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
   gltfModels["bookModel"].rotation.z += 0.01;
 
-  // user.position.setZ(Math.sin(camPositionZ) * 5);
-  // camPositionZ += 0.003;
+  controllerGestures.forEach((controllerGesture) => {
+    gestureHandling(controllerGesture);
+  });
 
   renderer.render(scene, camera);
 });
+
+// user.position.setZ(Math.sin(camPositionZ) * 5);
+// camPositionZ += 0.003;
