@@ -45,13 +45,6 @@ orbit.maxDistance = 20;
 orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
-// ------
-let user = new THREE.Group();
-user.position.set(0, 0, 0);
-user.add(camera);
-scene.add(user);
-// ------
-
 // ----- Audio Set -----
 const listener = new THREE.AudioListener();
 camera.add(listener);
@@ -107,14 +100,54 @@ pLight2.position.set(0, 0, 25);
 
 scene.add(pLight1, pLight2);
 
-// Grid
-let grid = new THREE.GridHelper(100, 100, "#168270", "#2c1682");
-grid.frustrumCulled = false;
-scene.add(grid);
+// ===== Grids =====
+let gridSize = 44;
+let gridSizeHalf = gridSize / 2;
+
+let grid1 = new THREE.GridHelper(gridSize, gridSize, "#168270", "#2c1682");
+grid1.frustrumCulled = false;
+scene.add(grid1);
+
+let grid2 = new THREE.GridHelper(gridSize, gridSize, "#168270", "#2c1682");
+grid2.frustrumCulled = false;
+grid2.rotation.x = Math.PI / 2;
+grid2.position.y = gridSizeHalf;
+grid2.position.z = gridSizeHalf;
+scene.add(grid2);
+
+let grid3 = new THREE.GridHelper(gridSize, gridSize, "#168270", "#2c1682");
+grid3.frustrumCulled = false;
+grid3.rotation.x = Math.PI / 2;
+grid3.position.y = gridSizeHalf;
+grid3.position.z = -gridSizeHalf;
+scene.add(grid3);
+
+let grid4 = new THREE.GridHelper(gridSize, gridSize, "#168270", "#2c1682");
+grid4.frustrumCulled = false;
+grid4.rotation.z = Math.PI / 2;
+grid4.position.y = gridSizeHalf;
+grid4.position.x = gridSizeHalf;
+scene.add(grid4);
+
+let grid5 = new THREE.GridHelper(gridSize, gridSize, "#168270", "#2c1682");
+grid5.frustrumCulled = false;
+grid5.rotation.z = Math.PI / 2;
+grid5.position.y = gridSizeHalf;
+grid5.position.x = -gridSizeHalf;
+scene.add(grid5);
+
+let grid6 = new THREE.GridHelper(gridSize, gridSize, "#168270", "#2c1682");
+grid6.frustrumCulled = false;
+grid6.rotation.y = Math.PI / 2;
+grid6.position.y = gridSizeHalf;
+grid6.position.y = gridSizeHalf * 2;
+scene.add(grid6);
+
+// ===== Grids =====
 
 // Create a sine-like wave
 const curve = new THREE.SplineCurve([
-  new THREE.Vector2(-20, 0),
+  new THREE.Vector2(-10, 0),
   new THREE.Vector2(-5, 5),
   new THREE.Vector2(0, 0),
   new THREE.Vector2(5, -5),
@@ -132,16 +165,20 @@ const splineObject = new THREE.Line(
 
 scene.add(splineObject);
 
-// ============= Scene Objects & Manipulations =============
-
 // Camera adjustments
-camera.position.y = 1.6;
+camera.position.z = 5;
 // Camera adjustments
 let camPositionZ = 0;
+// ============= Scene Objects & Manipulations =============
 
 // ============= Controllers =============
 let controllerGestures = [];
-let controllerReach = 2;
+let controllerModels = [];
+
+let userProfile = new THREE.Group();
+userProfile.position.set(0, 0, 0);
+
+let controllerReach = 3;
 
 function onSelectStart() {
   console.log("selected start");
@@ -177,7 +214,6 @@ function createControllers() {
     controlGesture.userData.selectPressed = false; // When select button is pressed
     controlGesture.userData.selectPressedPrev = false; // When select button is previously pressed one frame back
 
-    user.add(controlGesture);
     scene.add(controlGesture);
     controllerGestures.push(controlGesture);
 
@@ -185,8 +221,8 @@ function createControllers() {
     controllerGrip.add(
       controllerModelFactory.createControllerModel(controllerGrip)
     );
-    user.add(controllerGrip);
     scene.add(controllerGrip);
+    controllerModels.push(controllerGrip);
   }
 
   controllerGestures.forEach((controllerGesture) => {
@@ -280,11 +316,36 @@ function gestureHandling(controllerGesture) {
     controllerGesture.userData.selectPressed;
 }
 
+// ----- User Profile -----
+userProfile.add(camera);
+scene.add(userProfile);
+// ----- User Profile -----
+
 // ============= Run =============
+
+// Functions to call
 createControllers();
 
-console.log("Ver 7");
+// Variables for running logic
+let firstRun = true;
+console.log("Ver 8");
+
 renderer.setAnimationLoop(function () {
+  // if (firstRun) {
+  //   if (renderer.xr.isPresenting) {
+  //     userProfile.add(camera);
+  //     scene.add(userProfile);
+
+  //     controllerGestures.forEach((gesture) => {
+  //       userProfile.add(gesture);
+  //     });
+  //     controllerModels.forEach((model) => {
+  //       userProfile.add(model);
+  //     });
+  //     firstRun = false;
+  //   }
+  // }
+
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
   gltfModels["bookModel"].rotation.z += 0.01;
