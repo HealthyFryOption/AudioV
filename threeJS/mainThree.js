@@ -45,18 +45,13 @@ orbit.maxDistance = 20;
 orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
-// ------
-let user = new THREE.Group();
-user.position.set(0, 0, 0);
-user.add(camera);
-scene.add(user);
-// ------
-
 // ----- Audio Set -----
 const listener = new THREE.AudioListener();
 camera.add(listener);
+
 // create a global audio source
 const sound = new THREE.Audio(listener);
+sound.setVolume(1);
 // ----- Audio Set -----
 
 // ----- GLTF Set -----
@@ -79,7 +74,7 @@ function modelLoader(url) {
 
 // load a sound and set it as the Audio object's buffer
 const audioLoader = new THREE.AudioLoader();
-audioLoader.load("./sounds/R&J.mp3", function (buffer) {
+audioLoader.load("./sounds/SomeoneInTheCrowd.mp3", function (buffer) {
   sound.setBuffer(buffer);
   sound.setLoop(true);
   sound.setVolume(0.5);
@@ -107,14 +102,56 @@ pLight2.position.set(0, 0, 25);
 
 scene.add(pLight1, pLight2);
 
-// Grid
-let grid = new THREE.GridHelper(100, 100, "#168270", "#2c1682");
-grid.frustrumCulled = false;
-scene.add(grid);
+// ===== Grids =====
+let gridSize = 20;
+let gridSizeHalf = gridSize / 2;
+
+let gridMain = new THREE.GridHelper(
+  gridSize,
+  gridSize / 2,
+  "#168270",
+  "#2c1682"
+);
+gridMain.frustrumCulled = false;
+
+let grid1 = gridMain.clone();
+scene.add(grid1);
+
+let grid2 = gridMain.clone();
+grid2.rotation.x = Math.PI / 2;
+grid2.position.y = gridSizeHalf;
+grid2.position.z = gridSizeHalf;
+scene.add(grid2);
+
+let grid3 = gridMain.clone();
+grid3.rotation.x = Math.PI / 2;
+grid3.position.y = gridSizeHalf;
+grid3.position.z = -gridSizeHalf;
+scene.add(grid3);
+
+let grid4 = gridMain.clone();
+grid4.rotation.z = Math.PI / 2;
+grid4.position.y = gridSizeHalf;
+grid4.position.x = gridSizeHalf;
+scene.add(grid4);
+
+let grid5 = gridMain.clone();
+grid5.rotation.z = Math.PI / 2;
+grid5.position.y = gridSizeHalf;
+grid5.position.x = -gridSizeHalf;
+scene.add(grid5);
+
+let grid6 = gridMain.clone();
+grid6.rotation.y = Math.PI / 2;
+grid6.position.y = gridSizeHalf;
+grid6.position.y = gridSizeHalf * 2;
+scene.add(grid6);
+
+// ===== Grids =====
 
 // Create a sine-like wave
 const curve = new THREE.SplineCurve([
-  new THREE.Vector2(-20, 0),
+  new THREE.Vector2(-10, 0),
   new THREE.Vector2(-5, 5),
   new THREE.Vector2(0, 0),
   new THREE.Vector2(5, -5),
@@ -132,28 +169,45 @@ const splineObject = new THREE.Line(
 
 scene.add(splineObject);
 
-// ============= Scene Objects & Manipulations =============
-
 // Camera adjustments
-camera.position.y = 1.6;
+camera.position.z = 5;
 // Camera adjustments
 let camPositionZ = 0;
+// ============= Scene Objects & Manipulations =============
 
 // ============= Controllers =============
 let controllerGestures = [];
-let controllerReach = 2;
+let controllerModels = [];
+
+let userProfile = new THREE.Group();
+userProfile.position.set(0, 0, 0);
+
+let controllerReach = 3;
 
 function onSelectStart() {
   console.log("selected start");
-  // sound.play();
+
+  if (this.name == "left") {
+    if (sound.isPlaying) {
+      sound.pause();
+    } else {
+      sound.play();
+    }
+  }
+
   this.children[0].scale.z = controllerReach;
   this.userData.selectPressed = true;
 }
 
 function onSelectEnd() {
   console.log("selected stop");
+
   this.children[0].scale.z = 0;
   this.userData.selectPressed = false;
+}
+
+function setUpController(event) {
+  this.name = event.data.handedness;
 }
 
 function createControllers() {
@@ -177,7 +231,6 @@ function createControllers() {
     controlGesture.userData.selectPressed = false; // When select button is pressed
     controlGesture.userData.selectPressedPrev = false; // When select button is previously pressed one frame back
 
-    user.add(controlGesture);
     scene.add(controlGesture);
     controllerGestures.push(controlGesture);
 
@@ -185,13 +238,14 @@ function createControllers() {
     controllerGrip.add(
       controllerModelFactory.createControllerModel(controllerGrip)
     );
-    user.add(controllerGrip);
     scene.add(controllerGrip);
+    controllerModels.push(controllerGrip);
   }
 
   controllerGestures.forEach((controllerGesture) => {
     controllerGesture.addEventListener("selectstart", onSelectStart);
     controllerGesture.addEventListener("selectend", onSelectEnd);
+    controllerGesture.addEventListener("connected", setUpController);
   });
 }
 
@@ -201,32 +255,33 @@ function createControllers() {
 let interactableObjects = [];
 let chosenInteractableObject = []; // 0 => Object | 1 => ObjectOriginalPosition
 
+// ----- Cube Book -----
+let cubeBookGroup = new THREE.Group();
+
 let cube = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+  new THREE.MeshBasicMaterial({ color: 0xffdddd, wireframe: true })
 );
-cube.position.set(0, 1.5, -5.8);
-cube.isGLTF = false;
-interactableObjects.push(cube);
 
-// ===== GLTFs =====
+cubeBookGroup.add(cube);
 
-// ----- Book Model -----
+// Book Model
 gltfModels["bookModel"] = (await modelLoader("./models/scene.gltf")).scene;
 
 let scaleValue = 0.01;
 gltfModels["bookModel"].scale.set(scaleValue, scaleValue, scaleValue);
 gltfModels["bookModel"].receiveShadow = true;
-gltfModels["bookModel"].position.set(0, 1, 0);
+gltfModels["bookModel"].position.set(0, 0, 0);
 gltfModels["bookModel"].rotation.x = Math.PI / 2;
 gltfModels["bookModel"].rotation.z = 44;
 gltfModels["bookModel"].rotation.y = 50;
-gltfModels["bookModel"].isGLTF = true;
 
-interactableObjects.push(gltfModels["bookModel"]);
-// ----- Book Model -----
+cubeBookGroup.add(gltfModels["bookModel"]);
+// Book Model
 
-// ===== GLTFs =====
+interactableObjects.push(cubeBookGroup);
+cubeBookGroup.position.set(0, 2, -3);
+// ----- Cube Book -----
 
 // Add all interactable objects into scene
 interactableObjects.forEach((obj) => {
@@ -235,6 +290,7 @@ interactableObjects.forEach((obj) => {
 
 // ============= Interactable Objects =============
 
+// Gesture Handling Function
 function gestureHandling(controllerGesture) {
   if (controllerGesture.userData.selectPressed) {
     if (!chosenInteractableObject.length > 0) {
@@ -253,15 +309,22 @@ function gestureHandling(controllerGesture) {
         if (intersects[0].distance <= controllerReach) {
           controllerGesture.children[0].scale.z = intersects[0].distance;
 
-          chosenInteractableObject.push(intersects[0].object);
+          chosenInteractableObject.push(intersects[0].object.parent);
           chosenInteractableObject.push(
-            intersects[0].object.position.distanceTo(controllerGesture.position)
+            intersects[0].object.parent.position.distanceTo(
+              controllerGesture.position
+            )
           );
-          console.log(intersects[0].object);
+          // chosenInteractableObject.push(intersects[0].object); // for normal object without a THREEJS.group
+          // chosenInteractableObject.push(
+          //   intersects[0].object.position.distanceTo(controllerGesture.position)
+          // );
+          console.log(intersects[0].object.parent);
         }
       }
     } else {
-      // Move selected object so it's always the same distance from controller
+      // Move selected object while always the same distance from controller
+
       const moveVector = controllerGesture
         .getWorldDirection(new THREE.Vector3())
         .multiplyScalar(chosenInteractableObject[1])
@@ -269,6 +332,7 @@ function gestureHandling(controllerGesture) {
       chosenInteractableObject[0].position.copy(
         controllerGesture.position.clone().add(moveVector)
       );
+      chosenInteractableObject[0].lookAt(camera.position);
     }
   } else if (controllerGesture.userData.selectPressedPrev) {
     // Select released
@@ -280,21 +344,161 @@ function gestureHandling(controllerGesture) {
     controllerGesture.userData.selectPressed;
 }
 
+// ============= Outside Objects =============
+let outsideObj = [];
+
+function plusOrMinus() {
+  return Math.random() < 0.5 ? -1 : 1;
+}
+
+function getRandColor(brightness) {
+  // Six levels of brightness from 0 to 5, 0 being the darkest
+  var rgb = [Math.random() * 256, Math.random() * 256, Math.random() * 256];
+  var mix = [brightness * 51, brightness * 51, brightness * 51]; //51 => 255/5
+  var mixedrgb = [rgb[0] + mix[0], rgb[1] + mix[1], rgb[2] + mix[2]].map(
+    function (x) {
+      return Math.round(x / 2.0);
+    }
+  );
+
+  return (
+    "0x" +
+    mixedrgb[0].toString(16) +
+    mixedrgb[1].toString(16) +
+    mixedrgb[2].toString(16)
+  );
+
+  // return "rgb(" + mixedrgb.join(",") + ")";
+}
+
+for (let i = 0; i < 350; ++i) {
+  let geometry = new THREE.SphereGeometry(1, 12, 12);
+  let material = new THREE.MeshBasicMaterial();
+  let sphere = new THREE.Mesh(geometry, material);
+  sphere.material.color.setHex(getRandColor(5));
+
+  outsideObj.push(sphere);
+}
+
+let marginDistance = gridSize + 2;
+let axisChoices = ["x", "y", "z"];
+
+// ----- Create Spheres -----
+outsideObj.forEach((sphere) => {
+  // Initial position outside of the grid
+  sphere.position.set(
+    (marginDistance / 2) * plusOrMinus() +
+      Math.round(Math.random() * 100 * plusOrMinus()),
+    (marginDistance / 2) * plusOrMinus() +
+      Math.round(Math.random() * 100 * plusOrMinus()),
+    (marginDistance / 2) * plusOrMinus() +
+      Math.round(Math.random() * 100 * plusOrMinus())
+  );
+
+  sphere.uniformDirection = 0.01;
+  sphere.randomPosNeg = plusOrMinus();
+  sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1]; // which axis will be the turning point
+
+  sphere.counter = 0;
+  scene.add(sphere);
+});
+
+let outsideObjMomentum = 0.1;
+function moveOutsideObj() {
+  outsideObj.forEach((sphere) => {
+    sphere.counter += 1;
+
+    // been 80 frames
+    if (sphere.counter % 80 == 0) {
+      sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1];
+
+      sphere.randomPosNeg = plusOrMinus();
+      sphere.counter = 0;
+
+      if (sound.isPlaying) {
+        sphere.material.color.setHex(getRandColor(5));
+      }
+    }
+
+    for (let i = 0; i < 3; ++i) {
+      let axis = axisChoices[i];
+
+      // If axis chosen is the random one
+      if (axis == sphere.randomAxis) {
+        sphere.position[axis] +=
+          (sphere.uniformDirection +
+            Math.sin(sphere.counter / 4) * outsideObjMomentum) * // go up and down [Math.sin() increase horizontal width]
+          sphere.randomPosNeg;
+      } else {
+        // the rest move on the same direction
+
+        sphere.position[axis] +=
+          (sphere.uniformDirection + 0.5) *
+          sphere.randomPosNeg *
+          outsideObjMomentum;
+      }
+    }
+  });
+}
+// ============= Outside Objects =============
+
+// ----- User Profile -----
+userProfile.add(camera);
+scene.add(userProfile);
+// ----- User Profile -----
+
 // ============= Run =============
+
+// ===== Misc Functions For Run =====
+function initXR() {
+  if (renderer.xr.isPresenting) {
+    userProfile.add(camera);
+    scene.add(userProfile);
+    controllerGestures.forEach((gesture) => {
+      userProfile.add(gesture);
+    });
+    controllerModels.forEach((model) => {
+      userProfile.add(model);
+    });
+  }
+}
+
+// ===== Functions to call =====
 createControllers();
 
-console.log("Ver 7");
+//=====  Variables for running logic =====
+let firstRun = true;
+let frame = 0;
+console.log("Ver 10");
+
 renderer.setAnimationLoop(function () {
+  frame += 1;
+
+  if (sound.isPlaying) {
+    outsideObjMomentum = 0.55;
+  } else {
+    outsideObjMomentum = 0.05;
+  }
+  moveOutsideObj();
+
+  // if (firstRun) {
+  //   initXR();
+  //   firstRun = false;
+  // }
+
+  // user.position.setZ(Math.sin(camPositionZ) * 5);
+  // camPositionZ += 0.003;
+
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
   gltfModels["bookModel"].rotation.z += 0.01;
 
   controllerGestures.forEach((controllerGesture) => {
-    gestureHandling(controllerGesture);
+    if (controllerGesture.name == "right") {
+      // only right controller can be used to move things around
+      gestureHandling(controllerGesture);
+    }
   });
 
   renderer.render(scene, camera);
 });
-
-// user.position.setZ(Math.sin(camPositionZ) * 5);
-// camPositionZ += 0.003;
