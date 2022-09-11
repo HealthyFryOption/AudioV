@@ -42,16 +42,35 @@ renderer.xr.enabled = true;
 // ----- Orbit Set -----
 let orbit = new OrbitControls(camera, renderer.domElement);
 orbit.maxDistance = 20;
-orbit.maxZoom = 0.523599; // 30 degrees
+// orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
 // ----- Audio Set -----
-const listener = new THREE.AudioListener();
+let songIndex = 0;
+let songsToChoose = ["./sounds/R&J.mp3", "./sounds/SomeoneInTheCrowd.mp3"];
+let songsLoaded = [];
+let chosenSong;
+
+const listener = new THREE.AudioListener(); // Microphone to our camera (one needed only)
 camera.add(listener);
 
-// create a global audio source
-const sound = new THREE.Audio(listener);
-sound.setVolume(1);
+// Help load music files, set it to buffer later
+const audioLoader = new THREE.AudioLoader();
+
+// new THREE.Audio(listener) creates a non positional, global audio object (Audio object is the source of sounds)
+
+for (let i = 0; i < songsToChoose.length; ++i) {
+  songsLoaded.push(new THREE.Audio(listener));
+
+  audioLoader.load(songsToChoose[i], function (buffer) {
+    songsLoaded[i].setBuffer(buffer);
+    songsLoaded[i].setLoop(true);
+    songsLoaded[i].setVolume(1);
+  });
+}
+chosenSong = songsLoaded[0];
+
+let analyser = new THREE.AudioAnalyser(chosenSong, 64);
 // ----- Audio Set -----
 
 // ----- GLTF Set -----
@@ -69,17 +88,6 @@ function modelLoader(url) {
 // ============= Initialization =============
 
 // ============= Events =============
-
-// ----- Audio Events -----
-
-// load a sound and set it as the Audio object's buffer
-const audioLoader = new THREE.AudioLoader();
-audioLoader.load("./sounds/SomeoneInTheCrowd.mp3", function (buffer) {
-  sound.setBuffer(buffer);
-  sound.setLoop(true);
-  sound.setVolume(0.5);
-});
-// ----- Audio Events -----
 
 // ----- if window resizes -----
 window.addEventListener("resize", () => {
@@ -170,7 +178,10 @@ const splineObject = new THREE.Line(
 scene.add(splineObject);
 
 // Camera adjustments
-camera.position.z = 5;
+camera.position.x = -15;
+camera.position.z = 15;
+camera.position.y = 10;
+camera.lookAt(new THREE.Vector3(0, 0, 0));
 // Camera adjustments
 let camPositionZ = 0;
 // ============= Scene Objects & Manipulations =============
@@ -188,10 +199,15 @@ function onSelectStart() {
   console.log("selected start");
 
   if (this.name == "left") {
-    if (sound.isPlaying) {
-      sound.pause();
+    if (chosenSong.isPlaying) {
+      chosenSong.pause();
     } else {
-      sound.play();
+      chosenSong = songsLoaded[songIndex];
+      analyser = new THREE.AudioAnalyser(chosenSong, 64);
+      chosenSong.play();
+
+      songIndex += 1;
+      songIndex = songIndex < songsLoaded.length ? songIndex : 0;
     }
   }
 
@@ -400,24 +416,37 @@ outsideObj.forEach((sphere) => {
   sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1]; // which axis will be the turning point
 
   sphere.counter = 0;
+  sphere.lastFlash = 0;
+  sphere.castShadow = true; //default is false
+  sphere.receiveShadow = false; //default
+
   scene.add(sphere);
 });
 
 let outsideObjMomentum = 0.1;
+let significantAudChance = false;
+
 function moveOutsideObj() {
   outsideObj.forEach((sphere) => {
     sphere.counter += 1;
 
-    // been 80 frames
-    if (sphere.counter % 80 == 0) {
+    // been 70 frames
+    if (sphere.counter % 70 == 0) {
       sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1];
 
       sphere.randomPosNeg = plusOrMinus();
       sphere.counter = 0;
+      sphere.lastFlash = 0;
+    }
 
-      if (sound.isPlaying) {
-        sphere.material.color.setHex(getRandColor(5));
+    if (chosenSong.isPlaying) {
+      if (significantAudChance) {
+        if (sphere.counter - sphere.lastFlash > 5) {
+          sphere.lastFlash = sphere.counter;
+          sphere.material.color.setHex(getRandColor(5));
+        }
       }
+      console.log(significantAudChance);
     }
 
     for (let i = 0; i < 3; ++i) {
@@ -469,16 +498,29 @@ createControllers();
 //=====  Variables for running logic =====
 let firstRun = true;
 let frame = 0;
-console.log("Ver 10");
+
+console.log("Ver 11");
+
+let currentAudFrequency = 0;
+let prevAudFrequency = 0;
 
 renderer.setAnimationLoop(function () {
   frame += 1;
 
-  if (sound.isPlaying) {
-    outsideObjMomentum = 0.55;
-  } else {
-    outsideObjMomentum = 0.05;
+  currentAudFrequency = analyser.getAverageFrequency();
+
+  if (currentAudFrequency > 70) {
+    significantAudChance = true;
+  } else if (Math.abs(currentAudFrequency - prevAudFrequency) > 5) {
+    significantAudChance = true;
   }
+
+  if (chosenSong.isPlaying) {
+    outsideObjMomentum = Math.min(Math.floor(currentAudFrequency) * 0.015, 0.6);
+  } else {
+    outsideObjMomentum = 0.02;
+  }
+
   moveOutsideObj();
 
   // if (firstRun) {
@@ -501,4 +543,7 @@ renderer.setAnimationLoop(function () {
   });
 
   renderer.render(scene, camera);
+
+  significantAudChance = false;
+  prevAudFrequency = currentAudFrequency;
 });
