@@ -505,7 +505,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 13");
+console.log("Ver 13.2");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -552,7 +552,7 @@ renderer.setAnimationLoop(function () {
 
       if (chosenInteractableObject[0]) {
         chosenInteractableObject[1] =
-          chosenInteractableObject.position.distanceTo(
+          chosenInteractableObject[0].position.distanceTo(
             controllerGesture.position
           );
       }
