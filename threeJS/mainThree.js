@@ -9,6 +9,7 @@ import { OrbitControls } from "OrbitControls";
 import { XRControllerModelFactory } from "./webxr/XRControllerModelFactory.js";
 import { VRButton } from "./webxr/VRButton.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.138.3/examples/jsm/loaders/GLTFLoader.js";
+import { Vector3 } from "three";
 const GSAP = gsap;
 
 // ----- Needed Objects -----
@@ -203,7 +204,6 @@ let controllerReach = 3;
 
 function onSelectStart() {
   console.log("selected start");
-  console.log(this);
 
   if (this.name == "left") {
     if (chosenSong.isPlaying) {
@@ -216,6 +216,8 @@ function onSelectStart() {
       songIndex += 1;
       songIndex = songIndex < songsLoaded.length ? songIndex : 0;
     }
+  } else {
+    createBullet(this);
   }
 
   this.children[0].scale.z = controllerReach;
@@ -471,6 +473,8 @@ function moveOutsideObj() {
           continue;
         }
       } else {
+        // Math.abs(sphere.position[axis]) > maxDistanceOutsideObj // 4 pillar effect
+
         if (
           sphere.position[axis] > -maxDistanceOutsideObj &&
           sphere.position[axis] < maxDistanceOutsideObj
@@ -511,6 +515,33 @@ function moveOutsideObj() {
 }
 // ============= Outside Objects =============
 
+// ============= Shoot =============
+
+let allBullet = [];
+
+function createBullet(controllerGesture) {
+  let bullet = new THREE.Mesh(
+    new THREE.BoxGeometry(0.01, 0.01, 0.01),
+    new THREE.MeshBasicMaterial()
+  );
+  console.log(bullet);
+
+  let controllerGestureWorldPos = new THREE.Vector3();
+  controllerGesture.getWorldPosition(controllerGestureWorldPos);
+
+  bullet.position.copy(controllerGestureWorldPos);
+
+  let controllerGestureWorldQuaternion = new THREE.Quaternion();
+  controllerGesture.getWorldQuaternion(controllerGestureWorldQuaternion);
+
+  bullet.rotation.copy(controllerGesture.rotation);
+
+  allBullet.push(bullet);
+  scene.add(bullet);
+}
+
+// ============= Shoot =============
+
 // ============= Run =============
 
 // ===== Functions to call =====
@@ -546,9 +577,7 @@ renderer.setAnimationLoop(function () {
   }
 
   frame += 1;
-
   currentAudFrequency = analyser.getAverageFrequency();
-  console.log(currentAudFrequency);
 
   if (currentAudFrequency > 70) {
     significantAudChance = true;
@@ -575,9 +604,9 @@ renderer.setAnimationLoop(function () {
       } else if (controllerGesture.gamepad.axes[2] < 0) {
         userProfile.position.x += 0.01;
       } else if (controllerGesture.gamepad.axes[3] > 0) {
-        userProfile.position.z -= 0.01; // go down
+        userProfile.position.z += 0.01;
       } else if (controllerGesture.gamepad.axes[3] < 0) {
-        userProfile.position.z += 0.01; // go up
+        userProfile.position.z -= 0.01;
       }
 
       // only right controller can be used to move things around
@@ -588,6 +617,20 @@ renderer.setAnimationLoop(function () {
       } else if (controllerGesture.gamepad.axes[3] < 0) {
         userProfile.position.y += 0.01; // go up
       }
+    }
+  });
+
+  allBullet.forEach((bullet, index, object) => {
+    let direction = new Vector3();
+    bullet.getWorldDirection(direction);
+    bullet.position.add(direction.multiplyScalar(-1));
+
+    if (
+      Math.abs(bullet.position.x) > 20 ||
+      Math.abs(bullet.position.y) > 20 ||
+      Math.abs(bullet.position.z) > 20
+    ) {
+      object.splice(index, 1);
     }
   });
 
