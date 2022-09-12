@@ -329,23 +329,30 @@ function gestureHandling(controllerGesture) {
         if (intersects[0].distance <= controllerReach) {
           controllerGesture.children[0].scale.z = intersects[0].distance;
 
+          // chosenInteractableObject[0] is to put the Box's Parent
           chosenInteractableObject.push(intersects[0].object.parent);
+
+          let controllerGestureWorldPos = new THREE.Vector3(0, 0, 0);
+          controllerGesture.getWorldPosition(controllerGestureWorldPos);
+          // chosenInteractableObject[1] is to put the distance from the Box's parent object with the controller
           chosenInteractableObject.push(
             intersects[0].object.parent.position.distanceTo(
-              controllerGesture.parent.position
+              controllerGestureWorldPos
             )
           );
         }
       }
     } else {
       // Move selected object while always the same distance from controller
+      let controllerGestureWorldPos = new THREE.Vector3(0, 0, 0);
+      controllerGesture.getWorldPosition(controllerGestureWorldPos);
 
       const moveVector = controllerGesture
         .getWorldDirection(new THREE.Vector3())
         .multiplyScalar(chosenInteractableObject[1])
         .negate();
       chosenInteractableObject[0].position.copy(
-        controllerGesture.position.clone().add(moveVector)
+        controllerGestureWorldPos.clone().add(moveVector)
       );
       chosenInteractableObject[0].lookAt(camera.position);
     }
@@ -492,16 +499,13 @@ function initXR() {
     controllerModels.forEach((model) => {
       userProfile.add(model);
     });
-
-    console.log("presenting");
-
     scene.add(userProfile);
 
     firstRun = false;
   }
 }
 
-console.log("Ver 13.3");
+console.log("Ver 14");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -539,15 +543,6 @@ renderer.setAnimationLoop(function () {
         userProfile.position.z -= 0.01; // go down
       } else if (controllerGesture.gamepad.axes[3] < 0) {
         userProfile.position.z += 0.01; // go up
-      } else {
-        return;
-      }
-
-      if (chosenInteractableObject[0]) {
-        chosenInteractableObject[1] =
-          chosenInteractableObject[0].position.distanceTo(
-            controllerGesture.parent.position
-          );
       }
 
       // only right controller can be used to move things around
@@ -557,15 +552,6 @@ renderer.setAnimationLoop(function () {
         userProfile.position.y -= 0.01; // go down
       } else if (controllerGesture.gamepad.axes[3] < 0) {
         userProfile.position.y += 0.01; // go up
-      } else {
-        return;
-      }
-
-      if (chosenInteractableObject[0]) {
-        chosenInteractableObject[1] =
-          chosenInteractableObject[0].position.distanceTo(
-            controllerGesture.parent.position
-          );
       }
     }
   });
@@ -575,3 +561,8 @@ renderer.setAnimationLoop(function () {
 
   renderer.render(scene, camera);
 });
+
+// NOTES
+
+// Object3D.position represents the position of a 3D object in local space.  So the position relative to its parent.
+// If the 3D object does not have a parent, Object3D.position represents world space too. In order to get the world position of child objects, use Object3D.getWorldPosition()
