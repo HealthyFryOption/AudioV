@@ -197,6 +197,7 @@ let controllerReach = 3;
 
 function onSelectStart() {
   console.log("selected start");
+  console.log(this);
 
   if (this.name == "left") {
     if (chosenSong.isPlaying) {
@@ -223,8 +224,11 @@ function onSelectEnd() {
 }
 
 function setUpController(event) {
+  this.gamepad = event.data.gamepad;
   this.name = event.data.handedness;
 }
+
+function moveFromJoystick() {}
 
 function createControllers() {
   let controllerModelFactory = new XRControllerModelFactory();
@@ -482,13 +486,15 @@ scene.add(userProfile);
 function initXR() {
   if (renderer.xr.isPresenting) {
     userProfile.add(camera);
-    scene.add(userProfile);
+
     controllerGestures.forEach((gesture) => {
       userProfile.add(gesture);
     });
     controllerModels.forEach((model) => {
       userProfile.add(model);
     });
+
+    scene.add(userProfile);
   }
 }
 
@@ -499,7 +505,7 @@ createControllers();
 let firstRun = true;
 let frame = 0;
 
-console.log("Ver 11");
+console.log("Ver 12");
 
 let currentAudFrequency = 0;
 let prevAudFrequency = 0;
@@ -509,7 +515,7 @@ renderer.setAnimationLoop(function () {
 
   currentAudFrequency = analyser.getAverageFrequency();
 
-  if (currentAudFrequency > 70) {
+  if (currentAudFrequency > 60) {
     significantAudChance = true;
   } else if (Math.abs(currentAudFrequency - prevAudFrequency) > 5) {
     significantAudChance = true;
@@ -523,12 +529,12 @@ renderer.setAnimationLoop(function () {
 
   moveOutsideObj();
 
-  // if (firstRun) {
-  //   initXR();
-  //   firstRun = false;
-  // }
+  if (firstRun) {
+    initXR();
+    firstRun = false;
+  }
 
-  // user.position.setZ(Math.sin(camPositionZ) * 5);
+  // userProfile.position.setZ(Math.sin(camPositionZ) * 5);
   // camPositionZ += 0.003;
 
   gltfModels["bookModel"].rotation.z += 0.01;
@@ -539,6 +545,12 @@ renderer.setAnimationLoop(function () {
     if (controllerGesture.name == "right") {
       // only right controller can be used to move things around
       gestureHandling(controllerGesture);
+
+      // left on right joystick
+      if (controllerGesture.gamepad.axes[2] > 0) {
+        userProfile.position.x -= 0.01;
+      }
+      console.log(controllerGesture.gamepad.axes[2]);
     }
   });
 
