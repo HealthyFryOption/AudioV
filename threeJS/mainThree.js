@@ -552,7 +552,7 @@ renderer.setAnimationLoop(function () {
 
       // only right controller can be used to move things around
       gestureHandling(controllerGesture);
-    } else {
+    } else if (controllerGesture.name == "left") {
       if (controllerGesture.gamepad.axes[3] > 0) {
         userProfile.position.y -= 0.01; // go down
       } else if (controllerGesture.gamepad.axes[3] < 0) {
