@@ -41,13 +41,18 @@ renderer.xr.enabled = true;
 
 // ----- Orbit Set -----
 let orbit = new OrbitControls(camera, renderer.domElement);
-orbit.maxDistance = 20;
+// orbit.maxDistance = 20;
 // orbit.maxZoom = 0.523599; // 30 degrees
 // ----- Orbit Set -----
 
 // ----- Audio Set -----
+let songPath = "./sounds/";
 let songIndex = 0;
-let songsToChoose = ["./sounds/R&J.mp3", "./sounds/SomeoneInTheCrowd.mp3"];
+let songsToChoose = [
+  songPath + "aLovelyNight.mp3",
+  songPath + "R&J.mp3",
+  songPath + "SomeoneInTheCrowd.mp3",
+];
 let songsLoaded = [];
 let chosenSong;
 
@@ -70,7 +75,7 @@ for (let i = 0; i < songsToChoose.length; ++i) {
 }
 chosenSong = songsLoaded[0];
 
-let analyser = new THREE.AudioAnalyser(chosenSong, 64);
+let analyser = new THREE.AudioAnalyser(chosenSong, 512);
 // ----- Audio Set -----
 
 // ----- GLTF Set -----
@@ -103,15 +108,16 @@ window.addEventListener("resize", () => {
 
 // ============= Scene Objects & Manipulations =============
 
-let pLight1 = new THREE.PointLight(0xffffff, 3, 1000);
+let pLight1 = new THREE.PointLight(0xffffff, 1.5, 1000);
 let pLight2 = new THREE.PointLight(0xffffff, 1.5, 1000);
 pLight1.position.set(0, 0, 0);
-pLight2.position.set(0, 0, 25);
+scene.add(pLight1);
 
-scene.add(pLight1, pLight2);
+// pLight2.position.set(0, 0, 25);
+// scene.add(pLight2);
 
 // ===== Grids =====
-let gridSize = 20;
+let gridSize = 20; // grid centerpoint is (0, gridSize/2, 0)
 let gridSizeHalf = gridSize / 2;
 
 let gridMain = new THREE.GridHelper(
@@ -204,7 +210,7 @@ function onSelectStart() {
       chosenSong.pause();
     } else {
       chosenSong = songsLoaded[songIndex];
-      analyser = new THREE.AudioAnalyser(chosenSong, 64);
+      analyser = new THREE.AudioAnalyser(chosenSong, 512);
       chosenSong.play();
 
       songIndex += 1;
@@ -227,8 +233,6 @@ function setUpController(event) {
   this.gamepad = event.data.gamepad;
   this.name = event.data.handedness;
 }
-
-function moveFromJoystick() {}
 
 function createControllers() {
   let controllerModelFactory = new XRControllerModelFactory();
@@ -394,27 +398,31 @@ function getRandColor(brightness) {
 }
 
 for (let i = 0; i < 350; ++i) {
-  let geometry = new THREE.SphereGeometry(1, 12, 12);
-  let material = new THREE.MeshBasicMaterial();
-  let sphere = new THREE.Mesh(geometry, material);
+  let sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 12, 12),
+    new THREE.MeshBasicMaterial()
+  );
   sphere.material.color.setHex(getRandColor(5));
 
   outsideObj.push(sphere);
 }
 
-let marginDistance = gridSize + 2;
+let maxDistanceOutsideObj = 25 + gridSize; //max distance from margin distance of outside obj (max + margin => x,y,z)
+
+let yMax = maxDistanceOutsideObj;
+let yMin = -(maxDistanceOutsideObj - gridSize);
+
 let axisChoices = ["x", "y", "z"];
 
 // ----- Create Spheres -----
 outsideObj.forEach((sphere) => {
   // Initial position outside of the grid
   sphere.position.set(
-    (marginDistance / 2) * plusOrMinus() +
-      Math.round(Math.random() * 100 * plusOrMinus()),
-    (marginDistance / 2) * plusOrMinus() +
-      Math.round(Math.random() * 100 * plusOrMinus()),
-    (marginDistance / 2) * plusOrMinus() +
-      Math.round(Math.random() * 100 * plusOrMinus())
+    maxDistanceOutsideObj * plusOrMinus() +
+      Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus()),
+    Math.round(Math.random() * (yMax - yMin) + yMin),
+    maxDistanceOutsideObj * plusOrMinus() +
+      Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus())
   );
 
   sphere.uniformDirection = 0.01;
@@ -437,14 +445,13 @@ function moveOutsideObj() {
     sphere.counter += 1;
 
     // been 70 frames
-    if (sphere.counter % 70 == 0) {
+    if (sphere.counter % 40 == 0) {
       sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1];
 
       sphere.randomPosNeg = plusOrMinus();
       sphere.counter = 0;
       sphere.lastFlash = 0;
     }
-
     if (chosenSong.isPlaying) {
       if (significantAudChance) {
         if (sphere.counter - sphere.lastFlash > 5) {
@@ -452,9 +459,36 @@ function moveOutsideObj() {
           sphere.material.color.setHex(getRandColor(5));
         }
       }
-      console.log(significantAudChance);
     }
 
+    // Check if out of bounds
+    for (let i = 0; i < 3; ++i) {
+      let axis = axisChoices[i];
+
+      if (i == 1) {
+        // y
+        if (sphere.position.y > yMin && sphere.position.y < yMax) {
+          continue;
+        }
+      } else {
+        if (
+          sphere.position[axis] > -maxDistanceOutsideObj &&
+          sphere.position[axis] < maxDistanceOutsideObj
+        ) {
+          continue;
+        }
+      }
+
+      sphere.position.set(
+        maxDistanceOutsideObj * plusOrMinus() +
+          Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus()),
+        Math.round(Math.random() * (yMax - yMin) + yMin),
+        maxDistanceOutsideObj * plusOrMinus() +
+          Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus())
+      );
+    }
+
+    // Update movement
     for (let i = 0; i < 3; ++i) {
       let axis = axisChoices[i];
 
@@ -462,7 +496,7 @@ function moveOutsideObj() {
       if (axis == sphere.randomAxis) {
         sphere.position[axis] +=
           (sphere.uniformDirection +
-            Math.sin(sphere.counter / 4) * outsideObjMomentum) * // go up and down [Math.sin() increase horizontal width]
+            Math.cos(sphere.counter / 4) * outsideObjMomentum) * // go up and down [Math.sin() increase horizontal width]
           sphere.randomPosNeg;
       } else {
         // the rest move on the same direction
@@ -505,7 +539,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 14");
+console.log("Ver 15");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -514,15 +548,16 @@ renderer.setAnimationLoop(function () {
   frame += 1;
 
   currentAudFrequency = analyser.getAverageFrequency();
+  console.log(currentAudFrequency);
 
-  if (currentAudFrequency > 60) {
+  if (currentAudFrequency > 70) {
     significantAudChance = true;
-  } else if (Math.abs(currentAudFrequency - prevAudFrequency) > 5) {
+  } else if (currentAudFrequency > prevAudFrequency + 8) {
     significantAudChance = true;
   }
 
   if (chosenSong.isPlaying) {
-    outsideObjMomentum = Math.min(Math.floor(currentAudFrequency) * 0.015, 0.6);
+    outsideObjMomentum = Math.floor(currentAudFrequency) * 0.011;
   } else {
     outsideObjMomentum = 0.02;
   }
@@ -561,8 +596,3 @@ renderer.setAnimationLoop(function () {
 
   renderer.render(scene, camera);
 });
-
-// NOTES
-
-// Object3D.position represents the position of a 3D object in local space.  So the position relative to its parent.
-// If the 3D object does not have a parent, Object3D.position represents world space too. In order to get the world position of child objects, use Object3D.getWorldPosition()
