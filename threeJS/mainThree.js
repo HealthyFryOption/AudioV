@@ -475,12 +475,16 @@ function moveOutsideObj() {
 }
 // ============= Outside Objects =============
 
-// ----- User Profile -----
-userProfile.add(camera);
-scene.add(userProfile);
-// ----- User Profile -----
-
 // ============= Run =============
+
+// ===== Functions to call =====
+createControllers();
+
+//=====  Variables for running logic =====
+let firstRun = true;
+let frame = 0;
+let currentAudFrequency = 0;
+let prevAudFrequency = 0;
 
 // ===== Misc Functions For Run =====
 function initXR() {
@@ -494,22 +498,15 @@ function initXR() {
       userProfile.add(model);
     });
 
+    console.log("presenting");
+
     scene.add(userProfile);
+
+    firstRun = false;
   }
 }
 
-// ===== Functions to call =====
-createControllers();
-
-//=====  Variables for running logic =====
-let firstRun = true;
-let frame = 0;
-
 console.log("Ver 12");
-
-let currentAudFrequency = 0;
-let prevAudFrequency = 0;
-
 renderer.setAnimationLoop(function () {
   frame += 1;
 
@@ -531,11 +528,7 @@ renderer.setAnimationLoop(function () {
 
   if (firstRun) {
     initXR();
-    firstRun = false;
   }
-
-  // userProfile.position.setZ(Math.sin(camPositionZ) * 5);
-  // camPositionZ += 0.003;
 
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
@@ -549,13 +542,18 @@ renderer.setAnimationLoop(function () {
       // left on right joystick
       if (controllerGesture.gamepad.axes[2] > 0) {
         userProfile.position.x -= 0.01;
+      } else if (controllerGesture.gamepad.axes[2] < 0) {
+        userProfile.position.x += 0.01;
+      } else if (controllerGesture.gamepad.axes[3] > 0) {
+        userProfile.position.y += 0.01;
+      } else if (controllerGesture.gamepad.axes[3] < 0) {
+        userProfile.position.y -= 0.01;
       }
-      console.log(controllerGesture.gamepad.axes[2]);
     }
   });
 
-  renderer.render(scene, camera);
-
   significantAudChance = false;
   prevAudFrequency = currentAudFrequency;
+
+  renderer.render(scene, camera);
 });
