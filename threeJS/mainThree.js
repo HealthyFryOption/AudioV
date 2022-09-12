@@ -339,7 +339,6 @@ function gestureHandling(controllerGesture) {
           // chosenInteractableObject.push(
           //   intersects[0].object.position.distanceTo(controllerGesture.position)
           // );
-          console.log(intersects[0].object.parent);
         }
       }
     } else {
@@ -506,8 +505,12 @@ function initXR() {
   }
 }
 
-console.log("Ver 12");
+console.log("Ver 13");
 renderer.setAnimationLoop(function () {
+  if (firstRun) {
+    initXR();
+  }
+
   frame += 1;
 
   currentAudFrequency = analyser.getAverageFrequency();
@@ -523,12 +526,7 @@ renderer.setAnimationLoop(function () {
   } else {
     outsideObjMomentum = 0.02;
   }
-
   moveOutsideObj();
-
-  if (firstRun) {
-    initXR();
-  }
 
   gltfModels["bookModel"].rotation.z += 0.01;
   gltfModels["bookModel"].rotation.y += 0.01;
@@ -545,9 +543,18 @@ renderer.setAnimationLoop(function () {
       } else if (controllerGesture.gamepad.axes[2] < 0) {
         userProfile.position.x += 0.01;
       } else if (controllerGesture.gamepad.axes[3] > 0) {
-        userProfile.position.y += 0.01;
+        userProfile.position.z -= 0.01; // go down [for y ]
       } else if (controllerGesture.gamepad.axes[3] < 0) {
-        userProfile.position.y -= 0.01;
+        userProfile.position.z += 0.01; // go up
+      } else {
+        return;
+      }
+
+      if (chosenInteractableObject[0]) {
+        chosenInteractableObject[1] =
+          chosenInteractableObject.position.distanceTo(
+            controllerGesture.position
+          );
       }
     }
   });
