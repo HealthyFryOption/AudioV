@@ -332,13 +332,9 @@ function gestureHandling(controllerGesture) {
           chosenInteractableObject.push(intersects[0].object.parent);
           chosenInteractableObject.push(
             intersects[0].object.parent.position.distanceTo(
-              controllerGesture.position
+              controllerGesture.parent.position
             )
           );
-          // chosenInteractableObject.push(intersects[0].object); // for normal object without a THREEJS.group
-          // chosenInteractableObject.push(
-          //   intersects[0].object.position.distanceTo(controllerGesture.position)
-          // );
         }
       }
     } else {
@@ -505,7 +501,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 13.2");
+console.log("Ver 13.3");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -534,16 +530,13 @@ renderer.setAnimationLoop(function () {
 
   controllerGestures.forEach((controllerGesture) => {
     if (controllerGesture.name == "right") {
-      // only right controller can be used to move things around
-      gestureHandling(controllerGesture);
-
       // left on right joystick
       if (controllerGesture.gamepad.axes[2] > 0) {
         userProfile.position.x -= 0.01;
       } else if (controllerGesture.gamepad.axes[2] < 0) {
         userProfile.position.x += 0.01;
       } else if (controllerGesture.gamepad.axes[3] > 0) {
-        userProfile.position.z -= 0.01; // go down [for y ]
+        userProfile.position.z -= 0.01; // go down
       } else if (controllerGesture.gamepad.axes[3] < 0) {
         userProfile.position.z += 0.01; // go up
       } else {
@@ -553,7 +546,25 @@ renderer.setAnimationLoop(function () {
       if (chosenInteractableObject[0]) {
         chosenInteractableObject[1] =
           chosenInteractableObject[0].position.distanceTo(
-            controllerGesture.position
+            controllerGesture.parent.position
+          );
+      }
+
+      // only right controller can be used to move things around
+      gestureHandling(controllerGesture);
+    } else {
+      if (controllerGesture.gamepad.axes[3] > 0) {
+        userProfile.position.y -= 0.01; // go down
+      } else if (controllerGesture.gamepad.axes[3] < 0) {
+        userProfile.position.y += 0.01; // go up
+      } else {
+        return;
+      }
+
+      if (chosenInteractableObject[0]) {
+        chosenInteractableObject[1] =
+          chosenInteractableObject[0].position.distanceTo(
+            controllerGesture.parent.position
           );
       }
     }
