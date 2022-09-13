@@ -10,6 +10,7 @@ import { XRControllerModelFactory } from "./webxr/XRControllerModelFactory.js";
 import { VRButton } from "./webxr/VRButton.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.138.3/examples/jsm/loaders/GLTFLoader.js";
 import { Vector3 } from "three";
+
 const GSAP = gsap;
 
 // ----- Needed Objects -----
@@ -33,6 +34,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setClearColor("#000000");
 renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(innerWidth, innerHeight);
+
 // ----- Renderer Set -----
 
 // ----- WebXR Initialization -----
@@ -399,24 +401,40 @@ function getRandColor(brightness) {
   // return "rgb(" + mixedrgb.join(",") + ")";
 }
 
-for (let i = 0; i < 400; ++i) {
-  let sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.7, 12, 12),
-    new THREE.MeshBasicMaterial()
-  );
-  sphere.material.color.setHex(getRandColor(5));
-
-  outsideObj.push(sphere);
-}
-
 let maxDistanceOutsideObj = 30 + gridSize; //max distance from margin distance of outside obj (max + margin => x,y,z)
 
 let yMax = maxDistanceOutsideObj;
 let yMin = -(maxDistanceOutsideObj - gridSize);
-
+let glowRad = 2.5;
 let axisChoices = ["x", "y", "z"];
 
 // ----- Create Spheres -----
+for (let i = 0; i < 350; ++i) {
+  let sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 12, 12),
+    new THREE.MeshBasicMaterial()
+  );
+  let spriteMaterial = new THREE.SpriteMaterial({
+    map: new THREE.TextureLoader().load("./img/glow.png"),
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+  });
+
+  let sprite = new THREE.Sprite(spriteMaterial);
+  sprite.scale.set(glowRad, glowRad, glowRad);
+
+  // Color
+  sphere.colorNow = getRandColor(5);
+  sphere.material.color.setHex(sphere.colorNow);
+  sprite.material.color.setHex(sphere.colorNow);
+  // Color
+
+  sphere.add(sprite); // this centers the glow at the mesh
+  outsideObj.push(sphere);
+
+  console.log(sphere);
+}
+
 outsideObj.forEach((sphere) => {
   // Initial position outside of the grid
   sphere.position.set(
@@ -431,8 +449,10 @@ outsideObj.forEach((sphere) => {
 
   sphere.counter = 0;
   sphere.lastFlash = 0;
-  sphere.castShadow = true; //default is false
-  sphere.receiveShadow = false; //default
+
+  sphere.keepGlow = false;
+  sphere.castShadow = true;
+  sphere.receiveShadow = true;
 
   scene.add(sphere);
 });
@@ -443,18 +463,42 @@ let significantAudChance = false;
 function moveOutsideObj() {
   outsideObj.forEach((sphere) => {
     sphere.counter += 1;
+    sphere.children[0].scale.set(glowRad, glowRad, glowRad);
 
     if (chosenSong.isPlaying) {
       if (significantAudChance) {
         // If frame since last change has been at least 2
         if (sphere.counter - sphere.lastFlash > 2) {
           sphere.lastFlash = sphere.counter;
-          sphere.material.color.setHex(getRandColor(5));
+
+          // Color
+          sphere.colorNow = getRandColor(5);
+          sphere.children[0].material.color.setHex(sphere.colorNow);
+          sphere.children[0].scale.set(
+            glowRad + 0.9,
+            glowRad + 0.9,
+            glowRad + 0.9
+          );
+          sphere.material.color.setHex(sphere.colorNow);
+          // Color
 
           sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1];
           sphere.randomPosNeg = plusOrMinus();
           sphere.counter = 0;
           sphere.lastFlash = 0;
+
+          sphere.keepGlow = true;
+        }
+      }
+
+      if (sphere.keepGlow) {
+        if (sphere.counter - sphere.lastFlash > 5) {
+          sphere.keepGlow = false;
+        }
+        if (sphere.children[0].scale.x >= glowRad) {
+          sphere.children[0].scale.x += Math.sin(sphere.counter);
+          sphere.children[0].scale.y += Math.sin(sphere.counter);
+          sphere.children[0].scale.z += Math.sin(sphere.counter);
         }
       }
     }
@@ -565,7 +609,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 15");
+console.log("Ver 16");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
