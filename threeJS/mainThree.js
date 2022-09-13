@@ -399,7 +399,7 @@ function getRandColor(brightness) {
   // return "rgb(" + mixedrgb.join(",") + ")";
 }
 
-for (let i = 0; i < 350; ++i) {
+for (let i = 0; i < 400; ++i) {
   let sphere = new THREE.Mesh(
     new THREE.SphereGeometry(0.7, 12, 12),
     new THREE.MeshBasicMaterial()
@@ -409,7 +409,7 @@ for (let i = 0; i < 350; ++i) {
   outsideObj.push(sphere);
 }
 
-let maxDistanceOutsideObj = 25 + gridSize; //max distance from margin distance of outside obj (max + margin => x,y,z)
+let maxDistanceOutsideObj = 30 + gridSize; //max distance from margin distance of outside obj (max + margin => x,y,z)
 
 let yMax = maxDistanceOutsideObj;
 let yMin = -(maxDistanceOutsideObj - gridSize);
@@ -420,11 +420,9 @@ let axisChoices = ["x", "y", "z"];
 outsideObj.forEach((sphere) => {
   // Initial position outside of the grid
   sphere.position.set(
-    maxDistanceOutsideObj * plusOrMinus() +
-      Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus()),
+    Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus()),
     Math.round(Math.random() * (yMax - yMin) + yMin),
-    maxDistanceOutsideObj * plusOrMinus() +
-      Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus())
+    Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus())
   );
 
   sphere.uniformDirection = 0.01;
@@ -446,19 +444,17 @@ function moveOutsideObj() {
   outsideObj.forEach((sphere) => {
     sphere.counter += 1;
 
-    // been 70 frames
-    if (sphere.counter % 40 == 0) {
-      sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1];
-
-      sphere.randomPosNeg = plusOrMinus();
-      sphere.counter = 0;
-      sphere.lastFlash = 0;
-    }
     if (chosenSong.isPlaying) {
       if (significantAudChance) {
-        if (sphere.counter - sphere.lastFlash > 5) {
+        // If frame since last change has been at least 2
+        if (sphere.counter - sphere.lastFlash > 2) {
           sphere.lastFlash = sphere.counter;
           sphere.material.color.setHex(getRandColor(5));
+
+          sphere.randomAxis = axisChoices[Math.ceil(Math.random() * 3) - 1];
+          sphere.randomPosNeg = plusOrMinus();
+          sphere.counter = 0;
+          sphere.lastFlash = 0;
         }
       }
     }
@@ -480,16 +476,14 @@ function moveOutsideObj() {
           sphere.position[axis] < maxDistanceOutsideObj
         ) {
           continue;
+        } else {
+          sphere.position.set(
+            Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus()),
+            Math.round(Math.random() * (yMax - yMin) + yMin),
+            Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus())
+          );
         }
       }
-
-      sphere.position.set(
-        maxDistanceOutsideObj * plusOrMinus() +
-          Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus()),
-        Math.round(Math.random() * (yMax - yMin) + yMin),
-        maxDistanceOutsideObj * plusOrMinus() +
-          Math.round(Math.random() * maxDistanceOutsideObj * plusOrMinus())
-      );
     }
 
     // Update movement
@@ -499,9 +493,10 @@ function moveOutsideObj() {
       // If axis chosen is the random one
       if (axis == sphere.randomAxis) {
         sphere.position[axis] +=
-          (sphere.uniformDirection +
-            Math.cos(sphere.counter / 4) * outsideObjMomentum) * // go up and down [Math.sin() increase horizontal width]
-          sphere.randomPosNeg;
+          sphere.uniformDirection +
+          Math.cos(sphere.counter / 4) *
+            outsideObjMomentum * // go up and down [Math.sin() increase horizontal width]
+            sphere.randomPosNeg;
       } else {
         // the rest move on the same direction
 
@@ -579,22 +574,22 @@ renderer.setAnimationLoop(function () {
   frame += 1;
   currentAudFrequency = analyser.getAverageFrequency();
 
-  if (currentAudFrequency > 70) {
+  gltfModels["bookModel"].rotation.z += 0.01;
+  gltfModels["bookModel"].rotation.y += 0.01;
+  gltfModels["bookModel"].rotation.z += 0.01;
+
+  if (currentAudFrequency > 80) {
     significantAudChance = true;
-  } else if (currentAudFrequency > prevAudFrequency + 8) {
+  } else if (currentAudFrequency > prevAudFrequency + 6) {
     significantAudChance = true;
   }
 
   if (chosenSong.isPlaying) {
-    outsideObjMomentum = Math.floor(currentAudFrequency) * 0.011;
+    outsideObjMomentum = Math.floor(currentAudFrequency) * 0.005;
   } else {
     outsideObjMomentum = 0.02;
   }
   moveOutsideObj();
-
-  gltfModels["bookModel"].rotation.z += 0.01;
-  gltfModels["bookModel"].rotation.y += 0.01;
-  gltfModels["bookModel"].rotation.z += 0.01;
 
   controllerGestures.forEach((controllerGesture) => {
     if (controllerGesture.name == "right") {
