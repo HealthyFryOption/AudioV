@@ -233,7 +233,9 @@ function onSelectEnd() {
   this.userData.selectPressed = false;
 }
 
+let controllerConnected = false;
 function setUpController(event) {
+  controllerConnected = true;
   this.gamepad = event.data.gamepad;
   this.name = event.data.handedness;
 }
@@ -291,9 +293,7 @@ let cube = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1),
   new THREE.MeshBasicMaterial({ color: 0xffdddd, wireframe: true })
 );
-
 cubeBookGroup.add(cube);
-cubeBookGroup.add(boxAxis);
 
 // Book Model
 gltfModels["bookModel"] = (await modelLoader("./models/scene.gltf")).scene;
@@ -329,6 +329,7 @@ function gestureHandling(controllerGesture) {
       controllerGesture.children[0].scale.z = controllerReach;
       const rotationMatrix = new THREE.Matrix4();
       rotationMatrix.extractRotation(controllerGesture.matrixWorld);
+
       const raycaster = new THREE.Raycaster();
       raycaster.ray.origin.setFromMatrixPosition(controllerGesture.matrixWorld);
       raycaster.ray.direction.set(0, 0, -1).applyMatrix4(rotationMatrix);
@@ -433,8 +434,6 @@ for (let i = 0; i < 350; ++i) {
 
   sphere.add(sprite); // this centers the glow at the mesh
   outsideObj.push(sphere);
-
-  console.log(sphere);
 }
 
 outsideObj.forEach((sphere) => {
@@ -476,11 +475,7 @@ function moveOutsideObj() {
           // Color
           sphere.colorNow = getRandColor(5);
           sphere.children[0].material.color.setHex(sphere.colorNow);
-          sphere.children[0].scale.set(
-            glowRad + 0.9,
-            glowRad + 0.9,
-            glowRad + 0.9
-          );
+          sphere.children[0].scale.set(glowRad + 1, glowRad + 1, glowRad + 1);
           sphere.material.color.setHex(sphere.colorNow);
           // Color
 
@@ -593,6 +588,7 @@ let firstRun = true;
 let frame = 0;
 let currentAudFrequency = 0;
 let prevAudFrequency = 0;
+let moved = false;
 
 // ===== Misc Functions For Run =====
 function initXR() {
@@ -611,11 +607,14 @@ function initXR() {
   }
 }
 
-console.log("Ver 17");
+console.log("Ver 17.4");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
   }
+
+  // camera.getWorldQuaternion(userProfile.quaternion);
+  // userProfile.rotation.copy(camera.rotation);
 
   frame += 1;
   currentAudFrequency = analyser.getAverageFrequency();
@@ -637,32 +636,48 @@ renderer.setAnimationLoop(function () {
   }
   moveOutsideObj();
 
-  controllerGestures.forEach((controllerGesture) => {
-    if (controllerGesture.name == "right") {
-      // left on right joystick
-      if (controllerGesture.gamepad.axes[2] > 0) {
-        userProfile.translateX(0.01);
-      } else if (controllerGesture.gamepad.axes[2] < 0) {
-        userProfile.translateX(-0.01);
+  if (controllerConnected) {
+    controllerGestures.forEach((controllerGesture) => {
+      if (controllerGesture.name == "right") {
+        // left on right joystick
+        if (controllerGesture.gamepad.axes[2] > 0) {
+          camera.translateX(0.01);
+          moved = true;
+        } else if (controllerGesture.gamepad.axes[2] < 0) {
+          camera.translateX(-0.01);
+          moved = true;
+        }
+
+        // Up and down joystick
+        if (controllerGesture.gamepad.axes[3] > 0) {
+          camera.translateZ(0.01);
+          moved = true;
+        } else if (controllerGesture.gamepad.axes[3] < 0) {
+          camera.translateZ(-0.01);
+          moved = true;
+        }
+
+        // only right controller can be used to move things around
+        gestureHandling(controllerGesture);
+      } else if (controllerGesture.name == "left") {
+        if (controllerGesture.gamepad.axes[3] > 0) {
+          camera.position.y -= 0.01; // go down
+          moved = true;
+        } else if (controllerGesture.gamepad.axes[3] < 0) {
+          camera.position.y += 0.01; // go up
+          moved = true;
+        }
       }
 
-      // Up and down joystick
-      if (controllerGesture.gamepad.axes[3] > 0) {
-        userProfile.translateZ(0.01);
-      } else if (controllerGesture.gamepad.axes[3] < 0) {
-        userProfile.translateZ(-0.01);
-      }
+      if (moved) {
+        let cameraWorldPos = new THREE.Vector3();
+        camera.getWorldPosition(cameraWorldPos);
 
-      // only right controller can be used to move things around
-      gestureHandling(controllerGesture);
-    } else if (controllerGesture.name == "left") {
-      if (controllerGesture.gamepad.axes[3] > 0) {
-        userProfile.position.y -= 0.01; // go down
-      } else if (controllerGesture.gamepad.axes[3] < 0) {
-        userProfile.position.y += 0.01; // go up
+        userProfile.position.copy(cameraWorldPos);
+        moved = false;
       }
-    }
-  });
+    });
+  }
 
   allBullet.forEach((bullet, index, object) => {
     let direction = new Vector3();
