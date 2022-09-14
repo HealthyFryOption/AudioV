@@ -6,4 +6,4 @@ The website works best with an Oculus Quest and its controllers.
 * Use the right controller joystick to move forward / backwards, and left / right relative to the direction your camera is facing
 * Use the left controller joystick to move up or down vertically on the y-axis of your VR Body
 
-** Please note that the code is not written in the best, optimized / clean way so its not a proper convention to follow for projects
+**Please note that the code is not written in the best, optimized / clean way so its not a proper convention to follow for projects
