@@ -282,6 +282,7 @@ function createControllers() {
 // ============= Interactable Objects =============
 let interactableObjects = [];
 let chosenInteractableObject = []; // 0 => Object | 1 => ObjectOriginalPosition
+var boxAxis = new THREE.AxesHelper(20);
 
 // ----- Cube Book -----
 let cubeBookGroup = new THREE.Group();
@@ -292,6 +293,7 @@ let cube = new THREE.Mesh(
 );
 
 cubeBookGroup.add(cube);
+cubeBookGroup.add(boxAxis);
 
 // Book Model
 gltfModels["bookModel"] = (await modelLoader("./models/scene.gltf")).scene;
@@ -609,7 +611,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 16");
+console.log("Ver 17");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -639,13 +641,16 @@ renderer.setAnimationLoop(function () {
     if (controllerGesture.name == "right") {
       // left on right joystick
       if (controllerGesture.gamepad.axes[2] > 0) {
-        userProfile.position.x -= 0.01;
+        userProfile.translateX(0.01);
       } else if (controllerGesture.gamepad.axes[2] < 0) {
-        userProfile.position.x += 0.01;
-      } else if (controllerGesture.gamepad.axes[3] > 0) {
-        userProfile.position.z += 0.01;
+        userProfile.translateX(-0.01);
+      }
+
+      // Up and down joystick
+      if (controllerGesture.gamepad.axes[3] > 0) {
+        userProfile.translateZ(0.01);
       } else if (controllerGesture.gamepad.axes[3] < 0) {
-        userProfile.position.z -= 0.01;
+        userProfile.translateZ(-0.01);
       }
 
       // only right controller can be used to move things around
