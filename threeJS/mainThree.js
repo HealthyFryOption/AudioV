@@ -631,7 +631,7 @@ renderer.setAnimationLoop(function () {
   }
 
   if (chosenSong.isPlaying) {
-    outsideObjMomentum = Math.floor(currentAudFrequency) * 0.005;
+    outsideObjMomentum = Math.floor(currentAudFrequency) * 0.003;
   } else {
     outsideObjMomentum = 0.02;
   }
