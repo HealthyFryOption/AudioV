@@ -588,6 +588,7 @@ let firstRun = true;
 let frame = 0;
 let currentAudFrequency = 0;
 let prevAudFrequency = 0;
+let moved = false;
 
 // ===== Misc Functions For Run =====
 function initXR() {
@@ -606,7 +607,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 17.3");
+console.log("Ver 17.4");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -641,15 +642,19 @@ renderer.setAnimationLoop(function () {
         // left on right joystick
         if (controllerGesture.gamepad.axes[2] > 0) {
           camera.translateX(0.01);
+          moved = true;
         } else if (controllerGesture.gamepad.axes[2] < 0) {
           camera.translateX(-0.01);
+          moved = true;
         }
 
         // Up and down joystick
         if (controllerGesture.gamepad.axes[3] > 0) {
           camera.translateZ(0.01);
+          moved = true;
         } else if (controllerGesture.gamepad.axes[3] < 0) {
           camera.translateZ(-0.01);
+          moved = true;
         }
 
         // only right controller can be used to move things around
@@ -657,15 +662,20 @@ renderer.setAnimationLoop(function () {
       } else if (controllerGesture.name == "left") {
         if (controllerGesture.gamepad.axes[3] > 0) {
           camera.position.y -= 0.01; // go down
+          moved = true;
         } else if (controllerGesture.gamepad.axes[3] < 0) {
           camera.position.y += 0.01; // go up
+          moved = true;
         }
       }
 
-      let cameraWorldPos = new THREE.Vector3();
-      camera.getWorldPosition(cameraWorldPos);
+      if (moved) {
+        let cameraWorldPos = new THREE.Vector3();
+        camera.getWorldPosition(cameraWorldPos);
 
-      userProfile.position.copy(cameraWorldPos);
+        userProfile.position.copy(cameraWorldPos);
+        moved = false;
+      }
     });
   }
 
