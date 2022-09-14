@@ -1,4 +1,4 @@
-# A hobby website for audio visualization in meant for testing 3D website with Virtual Reality technology enabled.
+# A hobby website for audio visualization meant for testing 3D website with Virtual Reality technology enabled.
 The website works best with an Oculus Quest and its controllers.
 
 * The right controller select button is in charge of interacting with interactable objects / other actions in the 3D space
