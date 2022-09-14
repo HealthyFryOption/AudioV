@@ -607,7 +607,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 17.4");
+console.log("Ver 17.5");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -638,44 +638,38 @@ renderer.setAnimationLoop(function () {
 
   if (controllerConnected) {
     controllerGestures.forEach((controllerGesture) => {
+      let previousCameraQuaternion = camera.quaternion;
+
       if (controllerGesture.name == "right") {
         // left on right joystick
         if (controllerGesture.gamepad.axes[2] > 0) {
-          camera.translateX(0.01);
-          moved = true;
+          userProfile.applyQuaternion(camera.quaternion);
+          userProfile.translateX(0.01);
         } else if (controllerGesture.gamepad.axes[2] < 0) {
-          camera.translateX(-0.01);
-          moved = true;
+          userProfile.applyQuaternion(camera.quaternion);
+          userProfile.translateX(-0.01);
         }
 
         // Up and down joystick
         if (controllerGesture.gamepad.axes[3] > 0) {
-          camera.translateZ(0.01);
-          moved = true;
+          userProfile.applyQuaternion(camera.quaternion);
+          userProfile.translateZ(0.01);
         } else if (controllerGesture.gamepad.axes[3] < 0) {
-          camera.translateZ(-0.01);
-          moved = true;
+          userProfile.applyQuaternion(camera.quaternion);
+          userProfile.translateZ(-0.01);
         }
 
         // only right controller can be used to move things around
         gestureHandling(controllerGesture);
       } else if (controllerGesture.name == "left") {
         if (controllerGesture.gamepad.axes[3] > 0) {
-          camera.position.y -= 0.01; // go down
-          moved = true;
+          userProfile.position.y -= 0.01; // go down
         } else if (controllerGesture.gamepad.axes[3] < 0) {
-          camera.position.y += 0.01; // go up
-          moved = true;
+          userProfile.position.y += 0.01; // go up
         }
       }
 
-      if (moved) {
-        let cameraWorldPos = new THREE.Vector3();
-        camera.getWorldPosition(cameraWorldPos);
-
-        userProfile.position.copy(cameraWorldPos);
-        moved = false;
-      }
+      camera.applyQuaternion(previousCameraQuaternion);
     });
   }
 
