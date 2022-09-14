@@ -588,7 +588,6 @@ let firstRun = true;
 let frame = 0;
 let currentAudFrequency = 0;
 let prevAudFrequency = 0;
-let cameraDirection = new THREE.Vector3();
 let userSpeed = 0.01;
 
 // ===== Misc Functions For Run =====
@@ -608,7 +607,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 17.6");
+console.log("Ver 17.7");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -642,20 +641,28 @@ renderer.setAnimationLoop(function () {
       if (controllerGesture.name == "right") {
         // left on right joystick
         if (controllerGesture.gamepad.axes[2] > 0) {
-          camera.getWorldDirection(cameraDirection);
-          userProfile.position.x.addScaledVector(cameraDirection, userSpeed);
+          let vector = new THREE.Vector3(userSpeed, 0, 0);
+          vector.applyQuaternion(camera.quaternion);
+
+          userProfile.position.add(vector);
         } else if (controllerGesture.gamepad.axes[2] < 0) {
-          camera.getWorldDirection(cameraDirection);
-          userProfile.position.x.addScaledVector(cameraDirection, -userSpeed);
+          let vector = new THREE.Vector3(-userSpeed, 0, 0);
+          vector.applyQuaternion(camera.quaternion);
+
+          userProfile.position.add(vector);
         }
 
         // Up and down joystick
         if (controllerGesture.gamepad.axes[3] > 0) {
-          camera.getWorldDirection(cameraDirection);
-          userProfile.position.z.addScaledVector(cameraDirection, userSpeed);
+          let vector = new THREE.Vector3(0, 0, userSpeed);
+          vector.applyQuaternion(camera.quaternion);
+
+          userProfile.position.add(vector);
         } else if (controllerGesture.gamepad.axes[3] < 0) {
-          camera.getWorldDirection(cameraDirection);
-          userProfile.position.z.addScaledVector(cameraDirection, -userSpeed);
+          let vector = new THREE.Vector3(0, 0, -userSpeed);
+          vector.applyQuaternion(camera.quaternion);
+
+          userProfile.position.add(vector);
         }
 
         // only right controller can be used to move things around
