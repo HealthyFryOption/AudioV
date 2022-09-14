@@ -588,7 +588,8 @@ let firstRun = true;
 let frame = 0;
 let currentAudFrequency = 0;
 let prevAudFrequency = 0;
-let moved = false;
+let cameraDirection = new THREE.Vector3();
+let userSpeed = 0.01;
 
 // ===== Misc Functions For Run =====
 function initXR() {
@@ -607,7 +608,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 17.5");
+console.log("Ver 17.6");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -638,25 +639,23 @@ renderer.setAnimationLoop(function () {
 
   if (controllerConnected) {
     controllerGestures.forEach((controllerGesture) => {
-      let previousCameraQuaternion = camera.quaternion;
-
       if (controllerGesture.name == "right") {
         // left on right joystick
         if (controllerGesture.gamepad.axes[2] > 0) {
-          userProfile.applyQuaternion(camera.quaternion);
-          userProfile.translateX(0.01);
+          camera.getWorldDirection(cameraDirection);
+          userProfile.position.x.addScaledVector(cameraDirection, userSpeed);
         } else if (controllerGesture.gamepad.axes[2] < 0) {
-          userProfile.applyQuaternion(camera.quaternion);
-          userProfile.translateX(-0.01);
+          camera.getWorldDirection(cameraDirection);
+          userProfile.position.x.addScaledVector(cameraDirection, -userSpeed);
         }
 
         // Up and down joystick
         if (controllerGesture.gamepad.axes[3] > 0) {
-          userProfile.applyQuaternion(camera.quaternion);
-          userProfile.translateZ(0.01);
+          camera.getWorldDirection(cameraDirection);
+          userProfile.position.z.addScaledVector(cameraDirection, userSpeed);
         } else if (controllerGesture.gamepad.axes[3] < 0) {
-          userProfile.applyQuaternion(camera.quaternion);
-          userProfile.translateZ(-0.01);
+          camera.getWorldDirection(cameraDirection);
+          userProfile.position.z.addScaledVector(cameraDirection, -userSpeed);
         }
 
         // only right controller can be used to move things around
@@ -668,8 +667,6 @@ renderer.setAnimationLoop(function () {
           userProfile.position.y += 0.01; // go up
         }
       }
-
-      camera.applyQuaternion(previousCameraQuaternion);
     });
   }
 
