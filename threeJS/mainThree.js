@@ -4,19 +4,17 @@
 
 // ----- Core Imports -----
 import * as THREE from "three";
+import * as ThreeMeshUI from "three-mesh-ui";
+
 import { OrbitControls } from "OrbitControls";
 
 import { XRControllerModelFactory } from "./webxr/XRControllerModelFactory.js";
 import { VRButton } from "./webxr/VRButton.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.138.3/examples/jsm/loaders/GLTFLoader.js";
-import { Vector3 } from "three";
 
 const GSAP = gsap;
 
 // ----- Needed Objects -----
-const myRayCaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -192,7 +190,7 @@ camera.position.z = 15;
 camera.position.y = 10;
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 // Camera adjustments
-let camPositionZ = 0;
+
 // ============= Scene Objects & Manipulations =============
 
 // ============= Controllers =============
@@ -378,6 +376,24 @@ function gestureHandling(controllerGesture) {
 }
 
 // ============= Outside Objects =============
+const container = new ThreeMeshUI.Block({
+  width: 0.5,
+  height: 0.28,
+  padding: 0.05,
+  fontFamily: "./assets/Roboto-msdf.json",
+  fontTexture: "./assets/Roboto-msdf.png",
+});
+
+//
+
+const text = new ThreeMeshUI.Text({
+  content: "A book is floating around!!!",
+});
+
+container.add(text);
+cubeBookGroup.add(container);
+container.position.z += 0.5;
+
 let outsideObj = [];
 
 function plusOrMinus() {
@@ -586,9 +602,12 @@ createControllers();
 //=====  Variables for running logic =====
 let firstRun = true;
 let frame = 0;
+
 let currentAudFrequency = 0;
 let prevAudFrequency = 0;
+
 let userSpeed = 0.01;
+let userVector = new THREE.Vector3(0, 0, 0);
 
 // ===== Misc Functions For Run =====
 function initXR() {
@@ -607,7 +626,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 17.8");
+console.log("Ver 18");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -640,33 +659,37 @@ renderer.setAnimationLoop(function () {
     controllerGestures.forEach((controllerGesture) => {
       camera.quaternion.x = 0; // dont let them go vertically up or down
       console.log(camera.quaternion);
+      console.log(camera.rotation);
 
       if (controllerGesture.name == "right") {
         // left on right joystick
         if (controllerGesture.gamepad.axes[2] > 0) {
-          let vector = new THREE.Vector3(userSpeed, 0, 0);
-          vector.applyQuaternion(camera.quaternion);
+          userVector.x = userSpeed;
+          userVector.applyQuaternion(camera.quaternion);
 
-          userProfile.position.add(vector);
+          userProfile.position.add(userVector);
         } else if (controllerGesture.gamepad.axes[2] < 0) {
-          let vector = new THREE.Vector3(-userSpeed, 0, 0);
-          vector.applyQuaternion(camera.quaternion);
+          userVector.x = -userSpeed;
+          userVector.applyQuaternion(camera.quaternion);
 
-          userProfile.position.add(vector);
+          userProfile.position.add(userVector);
         }
 
         // Up and down joystick
         if (controllerGesture.gamepad.axes[3] > 0) {
-          let vector = new THREE.Vector3(0, 0, userSpeed);
-          vector.applyQuaternion(camera.quaternion);
+          userVector.z = userSpeed;
+          userVector.applyQuaternion(camera.quaternion);
 
-          userProfile.position.add(vector);
+          userProfile.position.add(userVector);
         } else if (controllerGesture.gamepad.axes[3] < 0) {
-          let vector = new THREE.Vector3(0, 0, -userSpeed);
-          vector.applyQuaternion(camera.quaternion);
+          userVector.z = -userSpeed;
+          userVector.applyQuaternion(camera.quaternion);
 
-          userProfile.position.add(vector);
+          userProfile.position.add(userVector);
         }
+
+        // Reset userVector
+        userVector.set(0, 0, 0);
 
         // only right controller can be used to move things around
         gestureHandling(controllerGesture);
@@ -681,7 +704,7 @@ renderer.setAnimationLoop(function () {
   }
 
   allBullet.forEach((bullet, index, object) => {
-    let direction = new Vector3();
+    let direction = new THREE.Vector3();
     bullet.getWorldDirection(direction);
     bullet.position.add(direction.multiplyScalar(-1));
 
@@ -697,5 +720,7 @@ renderer.setAnimationLoop(function () {
   significantAudChance = false;
   prevAudFrequency = currentAudFrequency;
 
+  // This is typically done in the render loop :
+  ThreeMeshUI.update();
   renderer.render(scene, camera);
 });
