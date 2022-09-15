@@ -493,9 +493,9 @@ function moveOutsideObj() {
           sphere.keepGlow = false;
         }
         if (sphere.children[0].scale.x >= glowRad) {
-          sphere.children[0].scale.x += Math.sin(sphere.counter);
-          sphere.children[0].scale.y += Math.sin(sphere.counter);
-          sphere.children[0].scale.z += Math.sin(sphere.counter);
+          sphere.children[0].scale.x += Math.sin(sphere.counter) * 1.5;
+          sphere.children[0].scale.y += Math.sin(sphere.counter) * 1.5;
+          sphere.children[0].scale.z += Math.sin(sphere.counter) * 1.5;
         }
       }
     }
@@ -607,7 +607,7 @@ function initXR() {
   }
 }
 
-console.log("Ver 17.7");
+console.log("Ver 17.8");
 renderer.setAnimationLoop(function () {
   if (firstRun) {
     initXR();
@@ -638,6 +638,9 @@ renderer.setAnimationLoop(function () {
 
   if (controllerConnected) {
     controllerGestures.forEach((controllerGesture) => {
+      camera.quaternion.x = 0; // dont let them go vertically up or down
+      console.log(camera.quaternion);
+
       if (controllerGesture.name == "right") {
         // left on right joystick
         if (controllerGesture.gamepad.axes[2] > 0) {
