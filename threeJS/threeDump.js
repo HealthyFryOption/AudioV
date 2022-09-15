@@ -41,17 +41,17 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-if (firstRun) {
-  if (renderer.xr.isPresenting) {
-    userProfile.add(camera);
-    scene.add(userProfile);
+// if (firstRun) {
+//   if (renderer.xr.isPresenting) {
+//     userProfile.add(camera);
+//     scene.add(userProfile);
 
-    controllerGestures.forEach((gesture) => {
-      userProfile.add(gesture);
-    });
-    controllerModels.forEach((model) => {
-      userProfile.add(model);
-    });
-    firstRun = false;
-  }
-}
+//     controllerGestures.forEach((gesture) => {
+//       userProfile.add(gesture);
+//     });
+//     controllerModels.forEach((model) => {
+//       userProfile.add(model);
+//     });
+//     firstRun = false;
+//   }
+// }
