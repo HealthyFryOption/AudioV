@@ -12,3 +12,4 @@ The website works best with an Oculus Quest and its controllers.
 
 # Examples of the website
 ![alt text](./readMe/exp1.png)
+![alt text](./readMe/exp2.png)
