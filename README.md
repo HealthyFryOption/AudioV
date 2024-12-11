@@ -1,7 +1,6 @@
 # A hobby website for audio visualization with Virtual Reality technology enabled.
 
-Please note that this website is created for the purpose of learning how to enable 3D Websites with VR Technology, and for me to learn how the sequence and code work.
-## Thus, the code is not written in the best, optimized / clean way so its is not a proper convention to follow for projects but it will be redone properly in the future!
+Please note that this website is created for the purpose of learning how to enable 3D Websites with VR Technology.
 
 The website works best with an Oculus Quest and its controllers.
 
